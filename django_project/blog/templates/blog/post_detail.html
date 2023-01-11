@@ -1,0 +1,14 @@
+{% extends "blog/base.html" %}
+{% block content %}
+  <article class="media content-section">
+    <img class="rounded-circle article-img" src="{{ single_post.author.profile.image.url }}">
+    <div class="media-body">
+      <div class="article-metadata">
+        <a class="mr-2" href="#">{{ single_post.author }}</a>
+        <small class="text-muted">{{ single_post.date_posted|date:"F d, Y" }}</small>
+      </div>
+      <h2 class="article-title">{{ single_post.title }}</h2>
+      <p class="article-content">{{ single_post.content }}</p>
+    </div>
+  </article>
+{% endblock content %}
