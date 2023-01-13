@@ -1,12 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import (
-    CreateView,
-    UpdateView,
-    DeleteView
-)
 from .models import Post
 from .forms import PostForm
 
@@ -18,84 +13,61 @@ def home(request):
     return render(request, 'blog/home.html', context)
 
 
-def list_view(request):
+class PostListView(View):
 
-    context = {}
-
-    context["all_posts"] = Post.objects.all()
-
-    return render(request, "blog/home.html", context)
-
-# class PostListView(View):
-#
-#     def get(self, request):
-#         all_posts = Post.objects.all()
-#         return render(request, 'blog/home.html', {'all_posts': all_posts})
+    def get(self, request):
+        all_posts = Post.objects.all()
+        return render(request, 'blog/home.html', {'all_posts': all_posts})
 
 
-def single_post(request, pk):
+class PostDetailView(View):
 
-    context = {}
-
-    context["single_post"] = Post.objects.get(pk=pk)
-
-    return render(request, "blog/post_detail.html", context)
+    def get(self, request, pk):
+        isolated_post = Post.objects.get(pk=pk)
+        return render(request, 'blog/post_detail.html', {'single_post': isolated_post})
 
 
-# class PostDetailView(View):
-#
-#     def get(self, request, pk):
-#         isolated_post = Post.objects.get(pk=pk)
-#         return render(request, 'blog/post_detail.html', {'single_post': isolated_post})
+class NewPost(View):
+
+    form_class = PostForm
+    template_name = "blog/add_post.html"
+
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {'new_post': form})
+
+    def post(self, request):
+        form = self.form_class(request.POST or None, request.FILES or None)
+        if form.is_valid():
+            form.save()
+            return redirect(reverse('blog-home'))
+        return render(request, self.template_name, {'new_post': form})
 
 
-def create_post(request):
-    context = {}
+class PostUpdateView(View):
+    form_class = PostForm
+    template_name = 'blog/update_post.html'
 
-    form = PostForm(request.POST or None)
-    if form.is_valid():
-        form.save()
+    def get(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        form = self.form_class(instance=post)
+        return render(request, self.template_name, {'form': form})
 
-    context['form'] = form
-    return render(request, "blog/add_post.html", context)
-
-
-def update_post(request, pk):
-    context = {}
-
-    isolated_post = Post.objects.get(pk=pk)
-
-    form = PostForm(request.POST or None, instance=isolated_post)
-
-    if form.is_valid():
-        form.save()
-        return HttpResponseRedirect("/post/" + f'{pk}/')
-
-    context["form"] = form
-
-    return render(request, "blog/update_post.html", context)
-
-# class PostUpdateView(View):
-#
-#     def get(self, request, pk):
-#         isolated_post = Post.objects.get(pk=pk)
-#         return render(request, 'blog/post_detail.html', {'single_post': isolated_post})
+    def post(self, request, pk):
+        post = get_object_or_404(Post, pk=pk)
+        form = self.form_class(request.POST or None, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect(reverse('post-detail', kwargs={'pk': post.pk}))
+        return render(request, self.template_name, {'form': form})
 
 
-def delete_post(request, pk):
+class PostDeleteView(View):
 
-    isolated_post = Post.objects.get(pk=pk)
-    isolated_post.delete()
-
-    return HttpResponseRedirect('/')
-
-
-# class PostDeleteView(View):
-#
-#     def get(self, request, pk):
-#         isolated_post = Post.objects.get(pk=pk)
-#         isolated_post.delete()
-#         return HttpResponseRedirect('/')
+    def get(self, request, pk):
+        isolated_post = Post.objects.get(pk=pk)
+        isolated_post.delete()
+        return HttpResponseRedirect('/')
 
 
 def about(request):

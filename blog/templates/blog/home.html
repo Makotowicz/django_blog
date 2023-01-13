@@ -2,7 +2,6 @@
 {% block content %}
     {% for single_post in all_posts %}
         <article class="media content-section">
-          <img class="rounded-circle article-img" src="{{ single_post.author.profile.image.url }}">
           <div class="media-body">
             <div class="article-metadata">
               <a class="mr-2" href="#">{{ single_post.author }}</a>
